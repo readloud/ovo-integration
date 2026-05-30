@@ -17,7 +17,7 @@
  
 
 ### Instalasi
-
+```
 # Install via Composer
 composer require svn/ovoid
 
@@ -37,7 +37,7 @@ php examples/notifications.php
 or
 
 php run.php
-
+```
 ### versi NodeJS
 
 ```bash
