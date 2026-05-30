@@ -1,0 +1,7 @@
+body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px;background:#f7f7f8}
+.container{max-width:900px;margin:0 auto;background:#fff;padding:20px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+h1,h2{margin:0 0 12px}
+form,label{display:block;margin-bottom:8px}
+label input{margin-left:8px}
+.actions button{margin-right:8px;margin-bottom:8px}
+pre{background:#f3f4f6;padding:12px;border-radius:6px;overflow:auto;height:300px}

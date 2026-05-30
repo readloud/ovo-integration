@@ -1,0 +1,55 @@
+{
+  "name": "ovoid",
+  "version": "2.2.1",
+  "description": "Un-Official OVO API Wrapper for NodeJS",
+  "main": "dist",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "build": "babel src -d dist",
+    "test": "test",
+    "test:ovo": "tests/node test-ovo.js",
+    "test:auto": "tests/node test-ovo-auto.js",
+    "test:diagnostic": "tests/test-diagnostic",
+    "start": "node tests/test-ovo.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/readloud/un-official-ovo.id.git"
+  },
+  "keywords": [
+    "ovo",
+    "ovoid",
+    "payment-gateway",
+    "indonesia"
+  ],
+  "author": " readloud <readloud@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/readloud/un-official-ovo.id/issues"
+  },
+  "homepage": "https://github.com/readloud/un-official-ovo.id#readme",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "node-fetch": "^3.3.2",
+    "ovoid": "^2.2.1",
+    "request": "^2.88.2",
+    "request-promise-native": "^1.0.5",
+    "uuid": "^3.4.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.15.4",
+    "@babel/core": "^7.15.4",
+    "@babel/plugin-proposal-optional-chaining": "^7.14.5",
+    "@babel/preset-env": "^7.15.4",
+    "babel-eslint": "^10.0.3",
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "eslint-config-prettier": "^8.10.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.9.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.8"
+  }
+}
