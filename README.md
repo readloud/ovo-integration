@@ -41,17 +41,19 @@ php run.php
 ### versi NodeJS
 
 ```bash
+# Install
+
 npm install
 npm build
+
+# Run interactive test (recommended):
+
+node tests/test-ovo.js
+
+# Run automated test (with hardcoded OTP):
+
+node tests/test-ovo-auto.js
 ```
-
-Run interactive test (recommended):
-
-`node test-ovo.js`
-
-Run automated test (with hardcoded OTP):
-
-`node test-ovo-auto.js`
 
 ### Set environment variables (optional)
 
@@ -63,10 +65,10 @@ export OVO_OTP="123456"
 
 ### Troubleshooting
  
-`node test-diagnostic.js`
+`node tests/test-diagnostic.js`
 
-### Reference
-------------
+***Reference***
+
 - [@lintangtimur/ovoid](https://github.com/lintangtimur/ovoid)
 
 - [@anysz/ovopy](https://github.com/anysz/ovopy)
@@ -79,7 +81,7 @@ export OVO_OTP="123456"
 
 ***Important Notes:***
 
-Replace credentials: Change PHONE_NUMBER and OVO_PIN with your actual OVO account credentials
-OTP delivery: The OTP code will be sent to your phone number via SMS
-Rate limits: Don't request OTP too frequently
-Ready to test? Replace the phone number and PIN in `test-ovo.js`
+ - Replace credentials: Change PHONE_NUMBER and OVO_PIN with your actual OVO account credentials
+ - OTP delivery: The OTP code will be sent to your phone number via SMS
+ - Rate limits: Don't request OTP too frequently
+ - Ready to test? Replace the phone number and PIN in `test-ovo.js`
