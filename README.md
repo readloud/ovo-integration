@@ -1,6 +1,6 @@
 # Un-Official OVO API Wrapper
 
-![enter image description here](ovo-unofficial.png)
+![enter image description here](https://github.com/readloud/ovo-integration/blob/main/nodejs/ovo-unofficial.png)
 
 ### Method
 
