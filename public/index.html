@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OVO API Wrapper</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #4B2FDB;
+      --purple-light: #6B47F5;
+      --purple-dark: #3421A3;
+      --purple-faint: #EDE9FE;
+      --bg: #F5F3FF;
+      --card: #fff;
+      --text: #1F2937;
+      --muted: #6B7280;
+      --border: #E5E7EB;
+      --green: #059669;
+      --red: #DC2626;
+      --radius: 14px;
+      --shadow: 0 4px 20px rgba(75,47,219,.10);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--purple);
+      color: #fff;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    header svg { flex-shrink: 0; }
+    header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -.2px; }
+    header p  { font-size: .75rem; opacity: .75; }
+
+    /* ── View switching ── */
+    .view { display: none; flex: 1; padding: 20px; max-width: 480px; width: 100%; margin: 0 auto; }
+    .view.active { display: block; }
+
+    /* ── Auth card ── */
+    .auth-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      box-shadow: var(--shadow);
+    }
+    .auth-card h2 { font-size: 1.2rem; margin-bottom: 4px; }
+    .auth-card p.sub { color: var(--muted); font-size: .875rem; margin-bottom: 20px; }
+
+    .step-indicator {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+    .step-indicator span {
+      height: 4px;
+      flex: 1;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background .3s;
+    }
+    .step-indicator span.done { background: var(--purple); }
+
+    /* ── Form elements ── */
+    label { display: block; font-size: .85rem; font-weight: 500; margin-bottom: 6px; }
+    input[type=text], input[type=tel], input[type=number], input[type=password] {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input:focus { border-color: var(--purple); }
+
+    .form-group { margin-bottom: 16px; }
+    .hint { font-size: .78rem; color: var(--muted); margin-top: 4px; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-primary { background: var(--purple); color: #fff; }
+    .btn-primary:not(:disabled):hover { background: var(--purple-light); }
+    .btn-ghost { background: transparent; color: var(--purple); border: 1.5px solid var(--purple); margin-top: 10px; }
+    .btn-ghost:hover { background: var(--purple-faint); }
+    .btn-danger { background: var(--red); color: #fff; }
+
+    /* ── Alert ── */
+    .alert {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: .85rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert.error { background: #FEE2E2; color: var(--red); display: block; }
+    .alert.success { background: #D1FAE5; color: var(--green); display: block; }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Dashboard ── */
+    .dash-header {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--purple-light) 100%);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .dash-header::after {
+      content: '';
+      position: absolute;
+      right: -30px; top: -30px;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.07);
+    }
+    .dash-header .name { font-size: 1rem; font-weight: 600; }
+    .dash-header .phone { font-size: .8rem; opacity: .75; margin-top: 2px; }
+
+    .balance-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .balance-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .balance-card .label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    .balance-card .amount { font-size: 1.2rem; font-weight: 700; color: var(--purple); margin-top: 4px; }
+    .balance-card .amount.points { color: var(--green); }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .qa-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: var(--card);
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px 8px;
+      cursor: pointer;
+      font-size: .7rem;
+      font-weight: 500;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      transition: transform .15s;
+    }
+    .qa-btn:hover { transform: translateY(-2px); }
+    .qa-btn svg { color: var(--purple); }
+
+    /* ── List items ── */
+    .list-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .list-card h3 {
+      padding: 16px 18px 12px;
+      font-size: .9rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-item .icon {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon.in  { background: #D1FAE5; color: var(--green); }
+    .icon.out { background: #FEE2E2; color: var(--red); }
+    .icon.info{ background: var(--purple-faint); color: var(--purple); }
+    .list-item .info { flex: 1; min-width: 0; }
+    .list-item .info .title { font-size: .87rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .list-item .info .date  { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+    .list-item .amount-col  { text-align: right; font-size: .9rem; font-weight: 600; }
+    .amount-col.credit { color: var(--green); }
+    .amount-col.debit  { color: var(--red); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .load-more-btn {
+      display: block;
+      width: calc(100% - 36px);
+      margin: 12px 18px;
+      padding: 10px;
+      background: var(--purple-faint);
+      color: var(--purple);
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: .85rem;
+    }
+    .load-more-btn:hover { background: #DDD6FE; }
+
+    /* ── Transfer form ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--purple);
+      font-size: 1.2rem;
+      padding: 0;
+    }
+    .section-header h2 { font-size: 1.1rem; font-weight: 700; }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      display: flex;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      position: sticky;
+      bottom: 0;
+    }
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 10px 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: .65rem;
+      color: var(--muted);
+      font-weight: 500;
+      transition: color .2s;
+    }
+    .nav-btn.active { color: var(--purple); }
+    .nav-btn svg { width: 22px; height: 22px; }
+
+    /* ── Notifications ── */
+    .notif-unread-badge {
+      display: inline-block;
+      background: var(--red);
+      color: #fff;
+      border-radius: 999px;
+      font-size: .65rem;
+      padding: 1px 6px;
+      margin-left: 6px;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+
+    /* ── Responsive ── */
+    @media (min-width: 520px) {
+      .view { padding: 28px 20px; }
+      .quick-actions { grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <rect width="32" height="32" rx="8" fill="white" fill-opacity=".15"/>
+    <text x="7" y="23" font-family="Arial" font-size="16" font-weight="900" fill="white">OVO</text>
+  </svg>
+  <div>
+    <h1>OVO API Wrapper</h1>
+    <p>Un-Official · Indonesia Digital Payment</p>
+  </div>
+</header>
+
+<!-- ════════════════════ AUTH VIEW ════════════════════ -->
+<div id="auth-view" class="view active">
+  <div class="auth-card" style="margin-top:24px">
+
+    <div class="step-indicator">
+      <span id="step-ind-1"></span>
+      <span id="step-ind-2"></span>
+      <span id="step-ind-3"></span>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <!-- Step 1: Phone -->
+    <div id="step-phone">
+      <h2>Sign In</h2>
+      <p class="sub">Enter your OVO registered phone number to receive an OTP.</p>
+      <div class="form-group">
+        <label for="inp-phone">Phone Number</label>
+        <input id="inp-phone" type="tel" placeholder="08xxxxxxxxxx" autocomplete="tel">
+        <p class="hint">Indonesian format, e.g. 08123456789</p>
+      </div>
+      <button id="btn-request-otp" class="btn btn-primary" onclick="requestOTP()">Send OTP</button>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div id="step-otp" style="display:none">
+      <h2>Verify OTP</h2>
+      <p class="sub" id="otp-sub">Enter the 6-digit code sent to your phone.</p>
+      <div class="form-group">
+        <label for="inp-otp">OTP Code</label>
+        <input id="inp-otp" type="text" inputmode="numeric" maxlength="6" placeholder="000000">
+        <p class="hint" id="otp-timer"></p>
+      </div>
+      <button id="btn-verify-otp" class="btn btn-primary" onclick="verifyOTP()">Verify OTP</button>
+      <button class="btn btn-ghost" onclick="goToStep(1)">← Back</button>
+    </div>
+
+    <!-- Step 3: PIN -->
+    <div id="step-pin" style="display:none">
+      <h2>Enter PIN</h2>
+      <p class="sub">Enter your 6-digit OVO security PIN.</p>
+      <div class="form-group">
+        <label for="inp-pin">OVO PIN</label>
+        <input id="inp-pin" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="current-password">
+      </div>
+      <button id="btn-login" class="btn btn-primary" onclick="loginWithPin()">Sign In</button>
+      <button class="btn btn-ghost" onclick="goToStep(2)">← Back</button>
+    </div>
+
+  </div>
+
+  <div style="text-align:center;margin-top:20px;font-size:.78rem;color:var(--muted);line-height:1.6">
+    Credentials are never stored. Auth tokens are session-only.<br>
+    This is an unofficial wrapper. Not affiliated with OVO.
+  </div>
+</div>
+
+<!-- ════════════════════ DASHBOARD VIEW ════════════════════ -->
+<div id="dashboard-view" class="view" style="padding-bottom:70px">
+
+  <!-- Home panel -->
+  <div id="panel-home">
+    <div class="dash-header">
+      <div class="name" id="profile-name">Loading…</div>
+      <div class="phone" id="profile-phone"></div>
+    </div>
+
+    <div class="balance-row">
+      <div class="balance-card">
+        <div class="label">OVO Cash</div>
+        <div class="amount" id="balance-cash">–</div>
+      </div>
+      <div class="balance-card">
+        <div class="label">OVO Points</div>
+        <div class="amount points" id="balance-points">–</div>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <button class="qa-btn" onclick="showPanel('transactions')">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17H5a2 2 0 00-2 2v0a2 2 0 002 2h4m0 0v-4m0 4v4M9 7h10m0 0l-3-3m3 3l-3 3M5 7H3"/></svg>
+        Transactions
+      </button>
+      <button class="qa-btn" onclick="showPanel('transfer')">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+        Transfer
+      </button>
+      <button class="qa-btn" onclick="showPanel('notifications')">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        Alerts
+      </button>
+      <button class="qa-btn" onclick="doLogout()">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Logout
+      </button>
+    </div>
+
+    <div class="list-card" id="recent-txn-card">
+      <h3>Recent Transactions</h3>
+      <div id="recent-txn-list"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- Transactions panel -->
+  <div id="panel-transactions" style="display:none">
+    <div class="section-header">
+      <button class="back-btn" onclick="showPanel('home')">←</button>
+      <h2>Transactions</h2>
+    </div>
+    <div class="list-card">
+      <div id="txn-list"><div class="empty-state">Loading…</div></div>
+    </div>
+    <button id="btn-load-more" class="load-more-btn" onclick="loadMoreTxn()" style="display:none">Load more</button>
+  </div>
+
+  <!-- Notifications panel -->
+  <div id="panel-notifications" style="display:none">
+    <div class="section-header">
+      <button class="back-btn" onclick="showPanel('home')">←</button>
+      <h2>Notifications <span id="unread-badge" class="notif-unread-badge" style="display:none"></span></h2>
+    </div>
+    <div class="list-card">
+      <div id="notif-list"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- Transfer panel -->
+  <div id="panel-transfer" style="display:none">
+    <div class="section-header">
+      <button class="back-btn" onclick="showPanel('home')">←</button>
+      <h2>Transfer OVO Cash</h2>
+    </div>
+    <div id="transfer-alert" class="alert"></div>
+    <div class="auth-card" style="margin-top:0">
+      <div class="form-group">
+        <label for="inp-to">Recipient Phone</label>
+        <input id="inp-to" type="tel" placeholder="08xxxxxxxxxx">
+      </div>
+      <div class="form-group">
+        <label for="inp-amount">Amount (Rp)</label>
+        <input id="inp-amount" type="number" min="10000" step="1000" placeholder="10000">
+        <p class="hint">Minimum Rp 10.000</p>
+      </div>
+      <div class="form-group">
+        <label for="inp-message">Message (optional)</label>
+        <input id="inp-message" type="text" placeholder="e.g. for lunch">
+      </div>
+      <button id="btn-transfer" class="btn btn-primary" onclick="doTransfer()">Send Transfer</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════ BOTTOM NAV ════════════════════ -->
+<nav class="bottom-nav" id="bottom-nav" style="display:none">
+  <button class="nav-btn active" id="nav-home" onclick="showPanel('home')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </button>
+  <button class="nav-btn" id="nav-transactions" onclick="showPanel('transactions')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17H5a2 2 0 00-2 2v0a2 2 0 002 2h4m0 0v-4m0 4v4M9 7h10m0 0l-3-3m3 3l-3 3M5 7H3"/></svg>
+    History
+  </button>
+  <button class="nav-btn" id="nav-transfer" onclick="showPanel('transfer')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+    Transfer
+  </button>
+  <button class="nav-btn" id="nav-notifications" onclick="showPanel('notifications')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+    Alerts
+  </button>
+</nav>
+
+<script>
+/* ── State ── */
+const S = {
+  phone: '', deviceId: '', otpRefId: '',
+  otpToken: '', authToken: '',
+  currentPanel: 'home',
+  txnPage: 1,
+};
+
+function fmt(n) {
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+/* ── Alert helpers ── */
+function showAlert(msg, type = 'error', el = 'alert') {
+  const a = document.getElementById(el);
+  a.textContent = msg;
+  a.className = 'alert ' + type;
+}
+function clearAlert(el = 'alert') {
+  const a = document.getElementById(el);
+  a.className = 'alert';
+}
+
+/* ── API ── */
+async function api(path, { method = 'GET', body, auth = false } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) headers['Authorization'] = S.authToken;
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
+  return json;
+}
+
+/* ── Step navigation ── */
+function goToStep(n) {
+  ['step-phone','step-otp','step-pin'].forEach((id, i) => {
+    document.getElementById(id).style.display = (i === n - 1) ? '' : 'none';
+    document.getElementById('step-ind-' + (i + 1)).className = i < n ? 'done' : '';
+  });
+  clearAlert();
+}
+
+/* ── Auth flow ── */
+async function requestOTP() {
+  const phone = document.getElementById('inp-phone').value.trim();
+  if (!phone) return showAlert('Please enter your phone number.');
+  const btn = document.getElementById('btn-request-otp');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Sending OTP…';
+  clearAlert();
+  try {
+    const res = await api('/api/ovo/login', {
+      method: 'POST',
+      body: { phone, deviceId: S.deviceId || crypto.randomUUID() },
+    });
+    S.phone = phone;
+    S.deviceId = res.device_id;
+    S.otpRefId = res.otp_ref_id;
+    document.getElementById('otp-sub').textContent =
+      `OTP sent to ${phone}. Enter the 6-digit code.`;
+    goToStep(2);
+  } catch (err) {
+    showAlert(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send OTP';
+  }
+}
+
+async function verifyOTP() {
+  const otp = document.getElementById('inp-otp').value.trim();
+  if (otp.length !== 6) return showAlert('OTP must be 6 digits.');
+  const btn = document.getElementById('btn-verify-otp');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Verifying…';
+  clearAlert();
+  try {
+    const res = await api('/api/ovo/verify', {
+      method: 'POST',
+      body: { refId: S.otpRefId, otp, phone: S.phone, deviceId: S.deviceId },
+    });
+    S.otpToken = res.otp?.otp_token;
+    if (!S.otpToken) throw new Error('Invalid OTP — no token returned.');
+    goToStep(3);
+  } catch (err) {
+    showAlert(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Verify OTP';
+  }
+}
+
+async function loginWithPin() {
+  const pin = document.getElementById('inp-pin').value.trim();
+  if (pin.length !== 6) return showAlert('PIN must be 6 digits.');
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Signing in…';
+  clearAlert();
+  try {
+    const res = await api('/api/ovo/auth', {
+      method: 'POST',
+      body: { pin, otpToken: S.otpToken, phone: S.phone, otpRefId: S.otpRefId, deviceId: S.deviceId },
+    });
+    const auth = res.auth;
+    S.authToken = auth?.refresh_token || auth?.access_token || auth?.token;
+    if (!S.authToken) throw new Error('Authentication failed — no token received.');
+    sessionStorage.setItem('ovo_token', S.authToken);
+    enterDashboard();
+  } catch (err) {
+    showAlert(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
+
+/* ── Dashboard ── */
+function enterDashboard() {
+  document.getElementById('auth-view').classList.remove('active');
+  document.getElementById('dashboard-view').classList.add('active');
+  document.getElementById('bottom-nav').style.display = 'flex';
+  loadMe();
+  loadRecentTxn();
+}
+
+async function loadMe() {
+  try {
+    const res = await api('/api/ovo/me', { auth: true });
+    const p = res.profile || {};
+    document.getElementById('profile-name').textContent = p.name || p.fullname || 'OVO User';
+    document.getElementById('profile-phone').textContent = p.phone || p.msisdn || S.phone;
+
+    const b = res.balance || {};
+    const cash  = b['001']?.balance ?? b?.cash?.balance ?? '–';
+    const point = b['600']?.balance ?? b?.points?.balance ?? '–';
+    document.getElementById('balance-cash').textContent   = typeof cash  === 'number' ? fmt(cash)  : cash;
+    document.getElementById('balance-points').textContent = typeof point === 'number' ? fmt(point) : point;
+  } catch (err) {
+    document.getElementById('profile-name').textContent = 'OVO User';
+  }
+}
+
+/* ── Transactions ── */
+function renderTxnItem(t) {
+  const isCredit = (t.type || '').toLowerCase().includes('cr') || t.amount > 0;
+  const iconDir = isCredit ? 'in' : 'out';
+  const amtClass = isCredit ? 'credit' : 'debit';
+  const prefix = isCredit ? '+' : '−';
+  return `
+    <div class="list-item">
+      <div class="icon ${iconDir}">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          ${isCredit
+            ? '<path d="M12 5v14M5 12l7 7 7-7"/>'
+            : '<path d="M12 19V5M5 12l7-7 7 7"/>'}
+        </svg>
+      </div>
+      <div class="info">
+        <div class="title">${t.productType || t.category || t.description || 'Transaction'}</div>
+        <div class="date">${fmtDate(t.transactionDate || t.created_at || t.date)}</div>
+      </div>
+      <div class="amount-col ${amtClass}">${prefix}${fmt(Math.abs(t.amount || 0))}</div>
+    </div>`;
+}
+
+async function loadRecentTxn() {
+  try {
+    const res = await api('/api/ovo/transactions?page=1&limit=5', { auth: true });
+    const items = res.data?.data || res.data?.transactions || res.data || [];
+    const el = document.getElementById('recent-txn-list');
+    if (!items.length) { el.innerHTML = '<div class="empty-state">No transactions found.</div>'; return; }
+    el.innerHTML = items.map(renderTxnItem).join('');
+  } catch (err) {
+    document.getElementById('recent-txn-list').innerHTML =
+      `<div class="empty-state">Could not load transactions.</div>`;
+  }
+}
+
+let txnPage = 1;
+async function loadTransactions(reset = false) {
+  if (reset) { txnPage = 1; document.getElementById('txn-list').innerHTML = ''; }
+  try {
+    const res = await api(`/api/ovo/transactions?page=${txnPage}&limit=10`, { auth: true });
+    const items = res.data?.data || res.data?.transactions || res.data || [];
+    const el = document.getElementById('txn-list');
+    if (txnPage === 1 && !items.length) {
+      el.innerHTML = '<div class="empty-state">No transactions found.</div>';
+      document.getElementById('btn-load-more').style.display = 'none';
+      return;
+    }
+    el.innerHTML += items.map(renderTxnItem).join('');
+    document.getElementById('btn-load-more').style.display = items.length === 10 ? 'block' : 'none';
+    txnPage++;
+  } catch (err) {
+    if (txnPage === 1) {
+      document.getElementById('txn-list').innerHTML = '<div class="empty-state">Could not load transactions.</div>';
+    }
+  }
+}
+
+function loadMoreTxn() { loadTransactions(); }
+
+/* ── Notifications ── */
+async function loadNotifications() {
+  try {
+    const res = await api('/api/ovo/notifications', { auth: true });
+    const count = res.unread?.count || res.unread?.total || 0;
+    const badge = document.getElementById('unread-badge');
+    if (count > 0) { badge.textContent = count; badge.style.display = 'inline'; }
+    else badge.style.display = 'none';
+
+    const items = res.notifications?.data || res.notifications || [];
+    const el = document.getElementById('notif-list');
+    if (!items.length) { el.innerHTML = '<div class="empty-state">No notifications.</div>'; return; }
+    el.innerHTML = items.map(n => `
+      <div class="list-item">
+        <div class="icon info">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+        </div>
+        <div class="info">
+          <div class="title">${n.title || n.subject || 'Notification'}</div>
+          <div class="date">${n.body || n.message || ''}</div>
+        </div>
+      </div>`).join('');
+  } catch (err) {
+    document.getElementById('notif-list').innerHTML = '<div class="empty-state">Could not load notifications.</div>';
+  }
+}
+
+/* ── Transfer ── */
+async function doTransfer() {
+  const to     = document.getElementById('inp-to').value.trim();
+  const amount = Number(document.getElementById('inp-amount').value);
+  const message= document.getElementById('inp-message').value.trim();
+  clearAlert('transfer-alert');
+  if (!to) return showAlert('Recipient phone is required.', 'error', 'transfer-alert');
+  if (!amount || amount < 10000) return showAlert('Minimum transfer is Rp 10.000.', 'error', 'transfer-alert');
+  const btn = document.getElementById('btn-transfer');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Sending…';
+  try {
+    await api('/api/ovo/transfer', { method: 'POST', auth: true, body: { to, amount, message } });
+    showAlert('Transfer successful!', 'success', 'transfer-alert');
+    document.getElementById('inp-to').value = '';
+    document.getElementById('inp-amount').value = '';
+    document.getElementById('inp-message').value = '';
+    loadMe();
+  } catch (err) {
+    showAlert(err.message, 'error', 'transfer-alert');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Transfer';
+  }
+}
+
+/* ── Logout ── */
+async function doLogout() {
+  if (!confirm('Sign out of OVO?')) return;
+  try { await api('/api/ovo/logout', { auth: true }); } catch (_) {}
+  S.authToken = '';
+  sessionStorage.removeItem('ovo_token');
+  document.getElementById('dashboard-view').classList.remove('active');
+  document.getElementById('bottom-nav').style.display = 'none';
+  document.getElementById('auth-view').classList.add('active');
+  goToStep(1);
+  document.getElementById('inp-phone').value = '';
+  document.getElementById('inp-otp').value = '';
+  document.getElementById('inp-pin').value = '';
+}
+
+/* ── Panel switching ── */
+function showPanel(name) {
+  ['home','transactions','notifications','transfer'].forEach(p => {
+    document.getElementById('panel-' + p).style.display = p === name ? '' : 'none';
+    const nb = document.getElementById('nav-' + p);
+    if (nb) nb.className = 'nav-btn' + (p === name ? ' active' : '');
+  });
+  S.currentPanel = name;
+  if (name === 'transactions') loadTransactions(true);
+  if (name === 'notifications') loadNotifications();
+}
+
+/* ── Init ── */
+goToStep(1);
+const savedToken = sessionStorage.getItem('ovo_token');
+if (savedToken) {
+  S.authToken = savedToken;
+  enterDashboard();
+}
+</script>
+</body>
+</html>
